@@ -6,3 +6,5 @@ and calculates "n factorial" for the provided whole number n.
 
 Build with 'make'. Test with 'make test'.
 
+TODO: Config example
+
