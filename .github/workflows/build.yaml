@@ -8,6 +8,10 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+defaults:
+  run:
+    working-directory: applier
+
 jobs:
   build:
     runs-on: ${{ matrix.config.os }}
@@ -49,6 +53,6 @@ jobs:
       # Because we are using rustls-tls, the credentials for the kubernetes cluster can't be a bare IP
       - name: Use localhost for kubeconfig
         run: |
-          sed -i "" 's/127.0.0.1/localhost/g' ~/.kube/config
+          sed -i 's/127.0.0.1/localhost/g' ~/.kube/config
       - name: Run tests
         run: make test
