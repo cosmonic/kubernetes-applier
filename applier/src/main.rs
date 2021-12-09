@@ -222,7 +222,14 @@ impl KubernetesApplier for ApplierProvider {
             .await
         } else {
             trace!("Object does not exist, creating");
-            api.create(&PostParams::default(), &object).await
+            api.create(
+                &PostParams {
+                    field_manager: Some(FIELD_MANAGER.to_string()),
+                    ..Default::default()
+                },
+                &object,
+            )
+            .await
         };
 
         if let Err(e) = resp {
