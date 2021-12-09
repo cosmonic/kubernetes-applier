@@ -2,7 +2,7 @@
 
 # name of compiled binary (usually project name unless overridden in [[bin]]
 # Required
-bin_path = "target/release/applier"
+bin_path = "target/debug/applier"
 
 # set RUST_LOG environment variable (default "info")
 rust_log = "debug"
@@ -20,4 +20,4 @@ rust_backtrace = "1"
 #link_name = "default"
 
 # name of contract under test
-contract_id = "wasmcloud:example:factorial"
+contract_id = "cosmonic:kubernetes_applier"

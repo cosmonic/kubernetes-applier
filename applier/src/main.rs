@@ -11,7 +11,7 @@ use kubernetes_applier_interface::{
     DeleteRequest, KubernetesApplier, KubernetesApplierReceiver, OperationResponse,
 };
 use tokio::sync::RwLock;
-use tracing::{debug, instrument, trace};
+use tracing::{debug, info, instrument, trace};
 use wasmbus_rpc::provider::prelude::*;
 
 use std::collections::HashMap;
@@ -25,21 +25,17 @@ const CONFIG_B64_KEY: &str = "config_b64";
 
 const CERT_PATH_ERROR: &str =
     "Certificate and key paths are not allowed for base64 encoded configs. Offending entry:";
+const FIELD_MANAGER: &str = "kubernetes-applier-provider";
 
 // main (via provider_main) initializes the threaded tokio executor,
 // listens to lattice rpcs, handles actor links,
 // and returns only when it receives a shutdown message
 //
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // TODO: Actually grab a level from configuration on startup
-    tracing_subscriber::fmt()
-        .with_writer(std::io::stderr)
-        .with_ansi(false)
-        .with_max_level(tracing::Level::INFO)
-        .init();
+    info!("Starting provider process");
     provider_main(ApplierProvider::default())?;
 
-    eprintln!("applier provider exiting");
+    info!("Applier provider exiting");
     Ok(())
 }
 
@@ -215,8 +211,15 @@ impl KubernetesApplier for ApplierProvider {
 
         let resp = if exists {
             trace!("Object already exists, attempting server-side apply");
-            api.patch(obj_name, &PatchParams::default(), &Patch::Apply(&object))
-                .await
+            api.patch(
+                obj_name,
+                &PatchParams {
+                    field_manager: Some(FIELD_MANAGER.to_string()),
+                    ..Default::default()
+                },
+                &Patch::Apply(&object),
+            )
+            .await
         } else {
             trace!("Object does not exist, creating");
             api.create(&PostParams::default(), &object).await
