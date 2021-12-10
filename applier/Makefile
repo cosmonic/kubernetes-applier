@@ -11,7 +11,7 @@ include ./provider.mk
 
 test-cleanup:
 	docker stop applier-nats || true
-	ps -ax | grep applier | grep -i -v make | awk '{print $1}' | xargs kill -9 || true
+	ps -ax | grep applier | grep -i -v make | awk '{print $$1}' | xargs kill -9 || true
 	kubectl delete svc -l wasmcloud.dev/test || true
 
 test:: build test-cleanup
