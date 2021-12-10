@@ -1,6 +1,6 @@
 # Kubernetes Applier Capability Provider
 
-This is a capability provider implementation of the `cosmonic:kubernetes_applier` contract. It's
+This is a capability provider implementation of the `cosmonic:kubernetes_applier` contract. Its
 purpose is to take arbitrary manifests from an actor and do the equivalent of a `kubectl apply` to
 create the object.
 

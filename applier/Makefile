@@ -14,7 +14,7 @@ test-cleanup:
 	ps -ax | grep applier | grep -i -v make | awk '{print $1}' | xargs kill -9 || true
 	kubectl delete svc -l wasmcloud.dev/test || true
 
-test: test-cleanup
+test:: build test-cleanup
 	cargo clippy --all-targets --all-features
 	docker run --rm -d -p 4222:4222 --name applier-nats nats:2
 	cargo test --tests
