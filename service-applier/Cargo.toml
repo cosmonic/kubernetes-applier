@@ -1,0 +1,25 @@
+[package]
+name = "service-applier"
+version = "0.1.0"
+authors = [ "" ]
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "service_applier"
+
+[dependencies]
+wasmcloud-interface-messaging = "0.3"
+kubernetes-applier-interface = { version = "0.1", path = "../interface/rust" }
+wasmbus-rpc = "0.6"
+k8s-openapi = { version = "0.13", default-features = false, features = ["v1_22"] }
+serde_yaml = "0.8"
+wasmcloud-interface-logging = "0.3"
+serde_json = "1"
+futures = "0.3"
+serde = "1"
+
+[profile.release]
+# Optimize for small code size
+lto = true
+opt-level = "s"
