@@ -52,6 +52,10 @@ impl ProviderHandler for ApplierProvider {
     #[instrument(level = "debug", skip(self, ld), fields(actor_id = %ld.actor_id))]
     async fn put_link(&self, ld: &LinkDefinition) -> Result<bool, RpcError> {
         debug!("Got link request");
+        if self.clients.read().await.contains_key(&ld.actor_id) {
+            info!("Link defintion for actor already exists, skipping...");
+            return Ok(false);
+        }
         // Normalize keys to lowercase
         let values: HashMap<String, String> = ld
             .values
