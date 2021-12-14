@@ -1296,6 +1296,8 @@ dependencies = [
 [[package]]
 name = "kubernetes-applier-interface"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04b234127bc57d990503083b74125594f5192fbf5b73822dd3056d12c9a8fc04"
 dependencies = [
  "async-trait",
  "futures 0.3.18",
