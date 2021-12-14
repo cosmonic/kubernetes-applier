@@ -8,12 +8,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
-defaults:
-  run:
-    working-directory: applier
-
 jobs:
-  build:
+  build-provider:
     runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false
@@ -32,7 +28,53 @@ jobs:
           default: true
           components: clippy, rustfmt
       - name: Build
+        working-directory: applier
         run: make build
+
+  build-actor:
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { os: "ubuntu-latest" }
+          - { os: "macos-latest" }
+          - { os: "windows-latest" }
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install latest Rust stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          default: true
+          components: clippy, rustfmt
+          target: wasm32-unknown-unknown
+      - name: Build
+        working-directory: service-applier
+        run: make release
+
+  build-interface:
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { os: "ubuntu-latest" }
+          - { os: "macos-latest" }
+          - { os: "windows-latest" }
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install latest Rust stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          default: true
+          components: clippy, rustfmt
+      - name: Build
+        working-directory: interface/rust
+        run: cargo build
 
   integration:
     runs-on: ubuntu-latest
@@ -45,8 +87,6 @@ jobs:
           toolchain: stable
           default: true
           components: clippy, rustfmt
-      - name: Build
-        run: make build
       - uses: engineerd/setup-kind@v0.5.0
         with:
           version: "v0.11.1"
@@ -55,4 +95,5 @@ jobs:
         run: |
           sed -i 's/127.0.0.1/localhost/g' ~/.kube/config
       - name: Run tests
+        working-directory: applier
         run: make test
