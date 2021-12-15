@@ -14,14 +14,14 @@ In order to use this actor, you'll need the NATS `wasmcloud:messaging` provider 
 Applier Provider](../applier):
 
 ```console
-$ wash ctl start provider <TODO: Provider ref>
+$ wash ctl start provider wasmcloud.azurecr.io/applier:0.1.0
 $ wash ctl start provider wasmcloud.azurecr.io/nats_messaging:0.11.5
 ```
 
 Once you have started the providers, you can start the actor:
 
 ```console
-$ wash ctl start actor <TODO: Actor ref>
+$ wash ctl start actor wasmcloud.azurecr.io/service_applier:0.1.0
 ```
 
 Then you'll need to link the providers to the actor. For instructions on how you can configure the
