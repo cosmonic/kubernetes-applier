@@ -1,0 +1,112 @@
+trigger:
+  branches:
+    include:
+      - "main"
+  tags:
+    include:
+      - "kubernetes-service-applier-v*"
+  paths:
+    include:
+      - "service-applier/"
+      - ".ci/actor.yml"
+pr:
+  branches:
+    include:
+      - "main"
+  paths:
+    include:
+      - "service-applier/"
+      - ".ci/actor.yml"
+
+pool:
+  vmImage: ubuntu-latest
+
+resources:
+  repositories:
+    - repository: public-templates
+      type: github
+      endpoint: cosmonic
+      name: cosmonic/ado-common
+
+variables:
+  - group: "Common Rust Vars"
+  - group: "Cosmonic Release Keys"
+  - name: working-directory
+    value: ./service-applier
+  - name: WASH_ISSUER_KEY
+    value: $[variables.COSMONIC_ACCOUNT_OFFICIAL]
+  - name: WASH_SUBJECT_KEY
+    value: $[variables.SERVICE_APPLIER_KEY]
+
+stages:
+  - stage: build_and_check
+    jobs:
+      - job: build_and_check
+        steps:
+          - template: steps/install-wash-ubuntu.yml@public-templates
+          - template: steps/rust-setup.yml@public-templates
+            parameters:
+              components:
+                - clippy
+                - rustfmt
+              targets:
+                - wasm32-unknown-unknown
+
+          - task: Cache@2
+            inputs:
+              key: '"rust-service-applier-actor-target" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
+              path: $(working-directory)/target
+            displayName: Cache target folder
+
+          - task: Cache@2
+            inputs:
+              key: '"rust-service-applier-actor-cache" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
+              path: $(HOME)/.cargo/registry
+            displayName: Cache cargo cache folder
+
+          - template: steps/rust-test.yml@public-templates
+            parameters:
+              workingDirectory: $(working-directory)
+
+  - stage: release
+    dependsOn:
+      - build_and_check
+    # Only do this stage if the ref is a tag and the previous stage succeeded
+    condition: and(succeeded('build_and_check'), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    jobs:
+      - job: release
+        steps:
+          - template: steps/install-wash-ubuntu.yml@public-templates
+
+          - template: steps/rust-setup.yml@public-templates
+            parameters:
+              targets:
+                - wasm32-unknown-unknown
+
+          - task: Cache@2
+            inputs:
+              key: '"rust-service-applier-actor-cache" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
+              path: $(HOME)/.cargo/registry
+            displayName: Cache cargo cache folder
+
+          - bash: make
+            workingDirectory: $(working-directory)
+            displayName: Build and sign actor
+            env:
+              WASH_ISSUER_KEY: $(WASH_ISSUER_KEY)
+              WASH_SUBJECT_KEY: $(WASH_SUBJECT_KEY)
+
+          - bash: |
+              echo "##vso[task.setvariable variable=oci-repository]$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[].name' | sed 's/-/_/g' )"
+              echo "##vso[task.setvariable variable=oci-version]$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[].version')"
+            displayName: Determine artifact metadata
+            workingDirectory: $(working-directory)
+
+          - template: steps/oci-release.yml@public-templates
+            parameters:
+              artifactPath: $(working-directory)/build/$(oci-repository)_s.wasm
+              ociUrl: wasmcloud.azurecr.io
+              ociRepository: $(oci-repository)
+              ociVersion: $(oci-version)
+              ociUsername: $(variables.COSMONIC_AZURECR_PUSH_USER)
+              ociPassword: $(variables.COSMONIC_AZURECR_PUSH_PASSWORD)
