@@ -1,0 +1,152 @@
+trigger:
+  branches:
+    include:
+      - "main"
+  tags:
+    include:
+      - "kubernetes-applier-provider-v*"
+  paths:
+    include:
+      - "applier/"
+      - ".ci/provider.yml"
+pr:
+  branches:
+    include:
+      - "main"
+  paths:
+    include:
+      - "applier/"
+      - ".ci/provider.yml"
+
+pool:
+  vmImage: ubuntu-latest
+
+resources:
+  repositories:
+    - repository: public-templates
+      type: github
+      endpoint: cosmonic
+      name: cosmonic/ado-common
+
+variables:
+  - group: "Common Rust Vars"
+  - group: "Cosmonic Release Keys"
+  - name: working-directory
+    value: ./applier
+  - name: WASH_ISSUER_KEY
+    value: $[variables.COSMONIC_ACCOUNT_OFFICIAL]
+  - name: WASH_SUBJECT_KEY
+    value: $[variables.COSMONIC_KUBERNETES_APPLIER_KEY]
+
+stages:
+  - stage: build_and_check
+    jobs:
+      - job: build_and_check
+        # TODO: Build on all OS types. This will require a working wash install on all OS
+        steps:
+          - template: steps/install-wash-ubuntu.yml@public-templates
+          - template: steps/rust-setup.yml@public-templates
+            parameters:
+              components:
+                - clippy
+                - rustfmt
+
+          - task: Cache@2
+            inputs:
+              key: '"rust-service-applier-provider-target" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
+              path: $(working-directory)/target
+            displayName: Cache target folder
+
+          - task: Cache@2
+            inputs:
+              key: '"rust-service-applier-provider-cache" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
+              path: $(HOME)/.cargo/registry
+            displayName: Cache cargo cache folder
+
+          # No tests needed here as they are all integration tests. So just run a check and clippy
+          - template: steps/rust-fmt-clippy.yml@public-templates
+            parameters:
+              workingDirectory: $(working-directory)
+
+      - job: integration
+        steps:
+          - template: steps/install-wash-ubuntu.yml@public-templates
+          - template: steps/rust-setup.yml@public-templates
+            parameters:
+              components:
+                - clippy
+                - rustfmt
+
+          - bash: |
+              curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
+              chmod +x ./kind
+              mv ./kind "${BINARY_LOCATION}/"
+              echo "##vso[task.setvariable variable=PATH]$PATH:${BINARY_LOCATION}/"
+            displayName: Install kind
+            env:
+              BINARY_LOCATION: $(Agent.TempDirectory)
+
+          - bash: kind create cluster
+            displayName: Start kind cluster
+
+          # Because we are using rustls-tls, the credentials for the kubernetes cluster can't be a bare IP
+          - bash: sed -i 's/127.0.0.1/localhost/g' ~/.kube/config
+            displayName: Use localhost for kubeconfig
+
+          - task: Cache@2
+            inputs:
+              key: '"rust-service-applier-provider-target" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
+              path: $(working-directory)/target
+            displayName: Cache target folder
+
+          - task: Cache@2
+            inputs:
+              key: '"rust-service-applier-provider-cache" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
+              path: $(HOME)/.cargo/registry
+            displayName: Cache cargo cache folder
+
+          - script: make test
+            displayName: Run integration tests
+            workingDirectory: $(working-directory)
+
+  - stage: release
+    dependsOn:
+      - build_and_check
+    # Only do this stage if the ref is a tag and the previous stage succeeded
+    condition: and(succeeded('build_and_check'), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    jobs:
+      - job: release
+        steps:
+          - template: steps/install-wash-ubuntu.yml@public-templates
+          - template: steps/rust-setup.yml@public-templates
+
+          - task: Cache@2
+            inputs:
+              key: '"rust-service-applier-provider-cache" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
+              path: $(HOME)/.cargo/registry
+            displayName: Cache cargo cache folder
+
+          - bash: cargo install --git https://github.com/brooksmtownsend/cross --branch add-darwin-target --force
+            displayName: Install Cross
+
+          - bash: make par-full
+            workingDirectory: $(working-directory)
+            displayName: Build provider archive
+            env:
+              WASH_ISSUER_KEY: $(WASH_ISSUER_KEY)
+              WASH_SUBJECT_KEY: $(WASH_SUBJECT_KEY)
+
+          - bash: |
+              echo "##vso[task.setvariable variable=oci-repository]$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[].name')"
+              echo "##vso[task.setvariable variable=oci-version]$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[].version')"
+            displayName: Determine artifact metadata
+            workingDirectory: $(working-directory)
+
+          - template: steps/oci-release.yml@public-templates
+            parameters:
+              artifactPath: $(working-directory)/build/$(oci-repository).par.gz
+              ociUrl: wasmcloud.azurecr.io
+              ociRepository: $(oci-repository)
+              ociVersion: $(oci-version)
+              ociUsername: $(variables.COSMONIC_AZURECR_PUSH_USER)
+              ociPassword: $(variables.COSMONIC_AZURECR_PUSH_PASSWORD)
