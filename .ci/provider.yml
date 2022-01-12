@@ -42,9 +42,18 @@ stages:
   - stage: build_and_check
     jobs:
       - job: build_and_check
-        # TODO: Build on all OS types. This will require a working wash install on all OS
+        strategy:
+          matrix:
+            linux:
+              vmImage: ubuntu-latest
+            windows:
+              vmImage: windows-latest
+            macos:
+              vmImage: macOS-latest
+        pool:
+          vmImage: $(vmImage)
         steps:
-          - template: steps/install-wash-ubuntu.yml@public-templates
+          - template: steps/install-wash.yml@public-templates
           - template: steps/rust-setup.yml@public-templates
             parameters:
               components:
@@ -61,6 +70,9 @@ stages:
             inputs:
               key: '"rust-service-applier-provider-cache" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
               path: $(HOME)/.cargo/registry
+            # Caching the cargo registry on windows doesn't work because the `HOME` var is not set.
+            # There might be a way around it, but ignoring it for now
+            condition: ne(variables['Agent.OS'], 'Windows_NT')
             displayName: Cache cargo cache folder
 
           # No tests needed here as they are all integration tests. So just run a check and clippy
@@ -70,7 +82,7 @@ stages:
 
       - job: integration
         steps:
-          - template: steps/install-wash-ubuntu.yml@public-templates
+          - template: steps/install-wash.yml@public-templates
           - template: steps/rust-setup.yml@public-templates
             parameters:
               components:
@@ -95,7 +107,7 @@ stages:
 
           - task: Cache@2
             inputs:
-              key: '"rust-service-applier-provider-target" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
+              key: '"rust-service-applier-provider-integration-target" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
               path: $(working-directory)/target
             displayName: Cache target folder
 
@@ -117,7 +129,7 @@ stages:
     jobs:
       - job: release
         steps:
-          - template: steps/install-wash-ubuntu.yml@public-templates
+          - template: steps/install-wash.yml@public-templates
           - template: steps/rust-setup.yml@public-templates
 
           - task: Cache@2
