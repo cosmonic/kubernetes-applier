@@ -41,23 +41,15 @@ stages:
     jobs:
       - job: build_and_check
         steps:
-          - template: steps/install-wash-ubuntu.yml@public-templates
           - template: steps/rust-setup.yml@public-templates
             parameters:
               components:
                 - clippy
                 - rustfmt
-          - task: Cache@2
-            inputs:
-              key: '"rust-service-applier-interface-target" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
-              path: $(working-directory)/target
-            displayName: Cache target folder
-
-          - task: Cache@2
-            inputs:
-              key: '"rust-service-applier-interface-cache" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
-              path: $(HOME)/.cargo/registry
-            displayName: Cache cargo cache folder
+          - template: steps/rust-caching.yml@public-templates
+            parameters:
+              projectName: service-applier-interface
+              workingDirectory: $(working-directory)
 
           - template: steps/rust-test.yml@public-templates
             parameters:
@@ -72,11 +64,11 @@ stages:
       - job: release
         steps:
           - template: steps/rust-setup.yml@public-templates
-          - task: Cache@2
-            inputs:
-              key: '"rust-service-applier-interface-cache" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
-              path: $(HOME)/.cargo/registry
-            displayName: Cache cargo cache folder
+          - template: steps/rust-caching.yml@public-templates
+            parameters:
+              projectName: service-applier-interface
+              workingDirectory: $(working-directory)
+              cacheTarget: false
 
           - template: steps/crate-release.yml@public-templates
             parameters:
