@@ -43,7 +43,6 @@ stages:
     jobs:
       - job: build_and_check
         steps:
-          - template: steps/install-wash-ubuntu.yml@public-templates
           - template: steps/rust-setup.yml@public-templates
             parameters:
               components:
@@ -69,7 +68,7 @@ stages:
     jobs:
       - job: release
         steps:
-          - template: steps/install-wash-ubuntu.yml@public-templates
+          - template: steps/install-wash.yml@public-templates
 
           - template: steps/rust-setup.yml@public-templates
             parameters:
