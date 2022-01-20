@@ -53,27 +53,15 @@ stages:
         pool:
           vmImage: $(vmImage)
         steps:
-          - template: steps/install-wash.yml@public-templates
           - template: steps/rust-setup.yml@public-templates
             parameters:
               components:
                 - clippy
                 - rustfmt
-
-          - task: Cache@2
-            inputs:
-              key: '"rust-service-applier-provider-target" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
-              path: $(working-directory)/target
-            displayName: Cache target folder
-
-          - task: Cache@2
-            inputs:
-              key: '"rust-service-applier-provider-cache" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
-              path: $(HOME)/.cargo/registry
-            # Caching the cargo registry on windows doesn't work because the `HOME` var is not set.
-            # There might be a way around it, but ignoring it for now
-            condition: ne(variables['Agent.OS'], 'Windows_NT')
-            displayName: Cache cargo cache folder
+          - template: steps/rust-caching.yml@public-templates
+            parameters:
+              projectName: service-applier-provider
+              workingDirectory: $(working-directory)
 
           # No tests needed here as they are all integration tests. So just run a check and clippy
           - template: steps/rust-fmt-clippy.yml@public-templates
@@ -82,7 +70,6 @@ stages:
 
       - job: integration
         steps:
-          - template: steps/install-wash.yml@public-templates
           - template: steps/rust-setup.yml@public-templates
             parameters:
               components:
@@ -105,17 +92,10 @@ stages:
           - bash: sed -i 's/127.0.0.1/localhost/g' ~/.kube/config
             displayName: Use localhost for kubeconfig
 
-          - task: Cache@2
-            inputs:
-              key: '"rust-service-applier-provider-integration-target" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
-              path: $(working-directory)/target
-            displayName: Cache target folder
-
-          - task: Cache@2
-            inputs:
-              key: '"rust-service-applier-provider-cache" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
-              path: $(HOME)/.cargo/registry
-            displayName: Cache cargo cache folder
+          - template: steps/rust-caching.yml@public-templates
+            parameters:
+              projectName: service-applier-provider-integration
+              workingDirectory: $(working-directory)
 
           - script: make test
             displayName: Run integration tests
@@ -131,12 +111,11 @@ stages:
         steps:
           - template: steps/install-wash.yml@public-templates
           - template: steps/rust-setup.yml@public-templates
-
-          - task: Cache@2
-            inputs:
-              key: '"rust-service-applier-provider-cache" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
-              path: $(HOME)/.cargo/registry
-            displayName: Cache cargo cache folder
+          - template: steps/rust-caching.yml@public-templates
+            parameters:
+              projectName: service-applier-provider
+              workingDirectory: $(working-directory)
+              cacheTarget: false
 
           - bash: cargo install --git https://github.com/brooksmtownsend/cross --branch add-darwin-target --force
             displayName: Install Cross

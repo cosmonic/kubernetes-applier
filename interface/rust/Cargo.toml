@@ -2,7 +2,7 @@
 name = "kubernetes-applier-interface"
 version = "0.1.0"
 description = "Interface library for the kubernetes-applier-interface kubernetes-applier capability, "
-authors = [ "dev@example.com" ]
+authors = ["Cosmonic Inc"]
 edition = "2021"
 license = "Apache-2.0"
 

@@ -43,7 +43,6 @@ stages:
     jobs:
       - job: build_and_check
         steps:
-          - template: steps/install-wash-ubuntu.yml@public-templates
           - template: steps/rust-setup.yml@public-templates
             parameters:
               components:
@@ -52,17 +51,10 @@ stages:
               targets:
                 - wasm32-unknown-unknown
 
-          - task: Cache@2
-            inputs:
-              key: '"rust-service-applier-actor-target" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
-              path: $(working-directory)/target
-            displayName: Cache target folder
-
-          - task: Cache@2
-            inputs:
-              key: '"rust-service-applier-actor-cache" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
-              path: $(HOME)/.cargo/registry
-            displayName: Cache cargo cache folder
+          - template: steps/rust-caching.yml@public-templates
+            parameters:
+              projectName: service-applier-actor
+              workingDirectory: $(working-directory)
 
           - template: steps/rust-test.yml@public-templates
             parameters:
@@ -76,18 +68,17 @@ stages:
     jobs:
       - job: release
         steps:
-          - template: steps/install-wash-ubuntu.yml@public-templates
+          - template: steps/install-wash.yml@public-templates
 
           - template: steps/rust-setup.yml@public-templates
             parameters:
               targets:
                 - wasm32-unknown-unknown
-
-          - task: Cache@2
-            inputs:
-              key: '"rust-service-applier-actor-cache" | "$(Agent.OS)" | "$(working-directory)/Cargo.toml"'
-              path: $(HOME)/.cargo/registry
-            displayName: Cache cargo cache folder
+          - template: steps/rust-caching.yml@public-templates
+            parameters:
+              projectName: service-applier-actor
+              workingDirectory: $(working-directory)
+              cacheTarget: false
 
           - bash: make
             workingDirectory: $(working-directory)

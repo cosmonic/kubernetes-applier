@@ -2,6 +2,7 @@
 name = "applier"
 version = "0.1.0"
 edition = "2021"
+authors = ["Cosmonic Inc"]
 
 [dependencies]
 base64 = "0.13"
