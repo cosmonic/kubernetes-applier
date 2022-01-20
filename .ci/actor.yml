@@ -77,7 +77,7 @@ stages:
                 - wasm32-unknown-unknown
           - template: steps/rust-caching.yml@public-templates
             parameters:
-              projectName: service-applier-interface
+              projectName: service-applier-actor
               workingDirectory: $(working-directory)
               cacheTarget: false
 
