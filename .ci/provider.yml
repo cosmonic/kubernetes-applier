@@ -37,6 +37,10 @@ variables:
     value: $[variables.COSMONIC_ACCOUNT_OFFICIAL]
   - name: WASH_SUBJECT_KEY
     value: $[variables.COSMONIC_KUBERNETES_APPLIER_KEY]
+  - name: PUSH_USER
+    value: $[variables.COSMONIC_AZURECR_PUSH_USER]
+  - name: PUSH_PASSWORD
+    value: $[variables.COSMONIC_AZURECR_PUSH_PASSWORD]
 
 stages:
   - stage: build_and_check
@@ -139,5 +143,5 @@ stages:
               ociUrl: wasmcloud.azurecr.io
               ociRepository: $(oci-repository)
               ociVersion: $(oci-version)
-              ociUsername: $(variables.COSMONIC_AZURECR_PUSH_USER)
-              ociPassword: $(variables.COSMONIC_AZURECR_PUSH_PASSWORD)
+              ociUsername: $(PUSH_USER)
+              ociPassword: $(PUSH_PASSWORD)

@@ -33,7 +33,7 @@ variables:
   - group: "Cosmonic Release Keys"
   - name: working-directory
     value: ./interface/rust
-  - name: CRATES_PUBLISH_TOKEN
+  - name: CRATES_TOKEN
     value: $[variables.CRATES_PUBLISH_TOKEN]
 
 stages:
@@ -74,4 +74,4 @@ stages:
           - template: steps/crate-release.yml@public-templates
             parameters:
               workingDirectory: $(working-directory)
-              cratesToken: $(CRATES_PUBLISH_TOKEN)
+              cratesToken: $(CRATES_TOKEN)
