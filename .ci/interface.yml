@@ -54,6 +54,7 @@ stages:
           - template: steps/rust-test.yml@public-templates
             parameters:
               workingDirectory: $(working-directory)
+              runDocTests: false
 
   - stage: release
     dependsOn:
