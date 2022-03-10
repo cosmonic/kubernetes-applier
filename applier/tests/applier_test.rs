@@ -1,7 +1,7 @@
 use k8s_openapi::api::core::v1::Service;
 use kube::{api::PostParams, Api};
 use kubernetes_applier_interface::*;
-use wasmbus_rpc::provider::prelude::*;
+use wasmbus_rpc::{error::RpcError, provider::prelude::*};
 use wasmcloud_test_util::{
     check,
     cli::print_test_results,

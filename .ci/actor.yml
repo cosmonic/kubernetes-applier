@@ -56,7 +56,7 @@ stages:
               projectName: service-applier-actor
               workingDirectory: $(working-directory)
 
-          - template: steps/rust-test.yml@public-templates
+          - template: steps/rust-fmt-clippy.yml@public-templates
             parameters:
               workingDirectory: $(working-directory)
 
