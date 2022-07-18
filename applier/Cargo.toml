@@ -1,6 +1,6 @@
 [package]
 name = "applier"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 authors = ["Cosmonic Inc"]
 
@@ -8,17 +8,16 @@ authors = ["Cosmonic Inc"]
 base64 = "0.13"
 tracing = { version = "0.1", features = ["log"] }
 tokio = { version = "1", features = ["full"] }
-kubernetes-applier-interface = "0.2"
-wasmbus-rpc = "0.8"
-k8s-openapi = { version = "0.14", default-features = false, features = ["v1_22"] }
-kube = { version = "0.69", default-features = false, features = ["rustls-tls", "config", "client"] }
+kubernetes-applier-interface = "0.3"
+wasmbus-rpc = "0.9.2"
+k8s-openapi = { version = "0.15", default-features = false, features = ["v1_22"] }
+kube = { version = "0.74", default-features = false, features = ["rustls-tls", "config", "client"] }
 serde_yaml = "0.8"
 atty = "0.2"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # test dependencies
 [dev-dependencies]
-wasmcloud-test-util = "0.3"
+wasmcloud-test-util = "0.4"
 
 [[bin]]
 name = "applier"

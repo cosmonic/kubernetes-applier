@@ -15,7 +15,7 @@ use wasmcloud_test_util::{run_selected, run_selected_spawn};
 async fn run_all() {
     let opts = TestOptions::default();
     let res = run_selected_spawn!(
-        &opts,
+        opts,
         health_check,
         create_update_delete_happy_path,
         invalid_create,
