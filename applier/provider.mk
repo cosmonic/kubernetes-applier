@@ -123,6 +123,7 @@ target/debug/$(bin_name): $(RUST_DEPS)
 target/%/release/$(bin_name): $(RUST_DEPS)
 	tname=`printf $@ | sed -E 's_target/([^/]+)/release.*$$_\1_'` &&\
 	rm -rf target/release/build &&\
+	rm -rf target/release/deps &&\
 	cross build --release --target $$tname
 
 endif
