@@ -38,9 +38,9 @@ variables:
   - name: WASH_SUBJECT_KEY
     value: $[variables.SERVICE_APPLIER_KEY]
   - name: PUSH_USER
-    value: $[variables.COSMONIC_AZURECR_PUSH_USER]
+    value: $[variables.WASMCLOUD_AZURECR_PUSH_USER]
   - name: PUSH_PASSWORD
-    value: $[variables.COSMONIC_AZURECR_PUSH_PASSWORD]
+    value: $[variables.WASMCLOUD_AZURECR_PUSH_PASSWORD]
 
 stages:
   - stage: build_and_check
